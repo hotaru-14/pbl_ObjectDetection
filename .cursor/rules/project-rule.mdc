@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+---
+
+# 概要(Overview)
+flaskとyolov8nを活用したリアルタイム物体検出アプリを作成するプロジェクトです。(This is a project to create a real-time object detection application using Flask and YOLOv8n.)
+
+# 条件(Conditions)
+- 生成したコードにはなんでこの実装をしたのかをコメントアウトで解説を含めること(Include comments explaining why this implementation was done in the generated code)
+- 生成したコードで基礎的な知識やapiを生成した場合は参考となるURLをweb検索で探して提示すること(When generating code that uses basic knowledge or APIs, search the web for reference URLs and provide them)
+- プログラムの実行コマンドだけは勝手に実行することは禁止です。ユーザーにこのコマンドを実行して動作を確認してみようと伝えること(It is prohibited to execute program execution commands on your own. Tell the user to execute this command to verify the operation)
+- 仮想環境に入ってから作業を行うこと(Work after entering the virtual environment)
+- 必要なライブラリ等はrequirements.txtに追加してください(Add required libraries to requirements.txt)
+- 適宜、.gitignoreすべきファイルやフォルダがあれば追加してください。(
+Add any files or folders that should be .gitignore as appropriate.)
