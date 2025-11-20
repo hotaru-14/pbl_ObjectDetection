@@ -1,1 +1,6 @@
 flask
+ultralytics
+opencv-python
+numpy
+openai
+python-dotenv
