@@ -82,8 +82,8 @@ def detect():
         }), 500
 
 
-@app.route('/describe', methods=['POST'])
-def describe():
+@app.route('/description', methods=['POST'])
+def description():
     """
     物体説明エンドポイント
     
