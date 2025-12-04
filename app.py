@@ -120,8 +120,11 @@ def description():
             'error': str(e)
         }), 500
 
-
-# スクリプトが直接実行された場合にFlaskアプリケーションを起動
-# これがないと、python3 app.pyを実行してもサーバーが起動しない
+# Render が期待するポートで待ち受けさせる
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render がくれる PORT 環境変数を使う
+    app.run(
+        host="0.0.0.0",  # ここが超重要！127.0.0.1 ではなく 0.0.0.0
+        port=port,
+        debug=False      # 本番なので False 推奨
+    )
