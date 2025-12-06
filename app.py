@@ -1,153 +1,152 @@
-import argparse  # コマンドライン引数で動作モード(simple / yolo)を切り替えるために使用
+import argparse  # コマンドライン引数で動作モードを切り替えるために使用
 import cv2       # カメラ映像の取得・表示のために使用
 from ultralytics import YOLO  # YOLOv8nモデルを用いた物体検出のために使用
+import time  # FPS計算用
 
 
-def simple_camera() -> None:
-    """OpenCVのみを用いたシンプルなカメラ表示機能。
-
-    GUIライブラリ(Tkinter等)は使わず、OpenCVの標準ウィンドウ機能だけで
-    カメラ映像をリアルタイム表示する最小限の実装にしている。
-
-    参考:
-        - OpenCV Python VideoCapture チュートリアル
-          https://docs.opencv.org/4.x/dd/d43/tutorial_py_video_display.html
-        - OpenCV HighGUI (imshow, waitKey)
-          https://docs.opencv.org/4.x/d7/dfc/group__highgui.html
-    """
-
-    # 0 は「デフォルトのカメラデバイス」を表す
-    # 一般的なPCではノートPC内蔵カメラや最初に接続されたUSBカメラが 0 になることが多い
-    cap = cv2.VideoCapture(0)
-
-    # カメラが取得できなかった場合は、無限ループに入らないよう即座に終了する
-    if not cap.isOpened():
-        print("カメラが見つかりません。")
-        return
-
-    print("[Simple] 終了するには 'q' キーを押してください。")
-
-    while True:
-        # 1フレームずつカメラから画像を取得する
-        # ret が False の場合はカメラストリームの終了やエラーを意味する
-        ret, frame = cap.read()
-        if not ret:
-            print("フレームを取得できませんでした。終了します。")
-            break
-
-        # 取得したフレームをそのままウィンドウに表示
-        # ウィンドウ名はわかりやすく 'Simple Offline Camera' としている
-        cv2.imshow('Simple Offline Camera', frame)
-
-        # waitKey(1) で約1ms待機しつつ、キーボード入力を確認する
-        # 'q' キーが押されたらループを抜け、リソースを解放して終了する
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    # ループを抜けたらカメラリソースとウィンドウを必ず解放する
-    # これを行わないとカメラが別アプリから利用できなくなる場合があるため
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-def yolo_camera() -> None:
+def run_object_detection(show_fps: bool = True, confidence_threshold: float = 0.5) -> None:
     """YOLOv8n を用いたリアルタイム物体検出カメラ機能。
+    
+    カメラからの映像をリアルタイムで処理し、物体検出結果を表示します。
+    FPS表示と信頼度スコアの閾値設定が可能です。
 
-    - `yolov8n.pt` を同一ディレクトリに配置しておけば完全オフラインで動作可能
-    - Ultralytics YOLO の Python API を利用して推論し、結果をフレームに描画して表示する
-
+    Args:
+        show_fps (bool, optional): FPSを表示するかどうか. デフォルトは True.
+        confidence_threshold (float, optional): 検出の信頼度の閾値 (0.0 ～ 1.0). デフォルトは 0.5.
+    
     参考:
         - Ultralytics YOLO Python Usage
           https://docs.ultralytics.com/usage/python/
         - Ultralytics YOLOv8 モデル概要
           https://docs.ultralytics.com/models/yolov8/
     """
-
     # モデルの読み込み
-    # 文字列 'yolov8n.pt' を指定することで、カレントディレクトリのファイルを読み込む。
-    # ファイルが存在しない場合は Ultralytics が自動的にダウンロードを試みるが、
-    # オフライン環境を想定しているため、事前に配置しておくことを前提としている。
     try:
         model = YOLO('yolov8n.pt')
     except Exception as e:
-        # モデルが見つからない / 読み込めない場合は、スタックトレースではなく
-        # ユーザーが原因を推測しやすいメッセージのみを出して終了する
         print("YOLOモデル 'yolov8n.pt' の読み込みに失敗しました。ファイルの有無を確認してください。")
         print(f"詳細: {e}")
         return
 
     # カメラデバイスをオープン
     cap = cv2.VideoCapture(0)
-
-    # カメラが開けなかった場合は、物体検出処理に進んでも意味がないので直ちに終了
+    
     if not cap.isOpened():
         print("カメラが見つかりません。")
         return
 
-    print("[YOLO] 終了するには 'q' キーを押してください。")
+    print("物体検出カメラを起動しました。")
+    print("終了するには 'q' キーを押してください。")
+    print("モード切り替え: 's' キーで表示/非表示切り替え")
+    print("信頼度閾値: '+' キーで上げる, '-' キーで下げる")
 
+    # FPS計測用の変数
+    prev_time = 0
+    current_fps = 0
+    
+    # 表示モード (True: 検出結果表示, False: 通常カメラ表示)
+    show_detection = True
+    
     while True:
-        # カメラからフレームを取得
+        # フレームの取得
         ret, frame = cap.read()
         if not ret:
             print("フレームを取得できませんでした。終了します。")
             break
-
-        # YOLOv8n による物体検出を実行
-        # verbose=False にすることで、毎フレームのログ出力を抑制し、
-        # コンソール出力が大量にならないようにしている
-        results = model(frame, verbose=False)
-
-        # Ultralytics の Result オブジェクトには plot() メソッドが用意されており、
-        # 検出結果(バウンディングボックス、ラベル、スコア)を描画済みの画像を返してくれる
-        annotated_frame = results[0].plot()
-
-        # 推論結果を描画したフレームを表示
-        cv2.imshow('YOLOv8 Offline Detection', annotated_frame)
-
-        # 'q' キーが押されたら推論ループを終了
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+            
+        # 現在時刻を取得（FPS計算用）
+        current_time = time.time()
+        
+        # 物体検出モードの場合
+        if show_detection:
+            # 推論を実行
+            results = model(frame, verbose=False, conf=confidence_threshold)
+            
+            # 検出結果をフレームに描画
+            frame = results[0].plot()
+            
+            # 信頼度閾値を表示
+            cv2.putText(frame, f'Confidence: {confidence_threshold:.2f}', 
+                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        
+        # FPSを計算して表示
+        if show_fps:
+            current_fps = 1 / (current_time - prev_time) if prev_time != 0 else 0
+            prev_time = current_time
+            cv2.putText(frame, f'FPS: {current_fps:.1f}', 
+                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        
+        # 表示モードを表示
+        mode_text = "検出モード" if show_detection else "通常モード"
+        cv2.putText(frame, f'Mode: {mode_text}', 
+                   (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        
+        # フレームを表示
+        cv2.imshow('リアルタイム物体検出', frame)
+        
+        # キー入力を処理
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):  # 'q' キーで終了
             break
-
-    # 使用後は必ずカメラとウィンドウリソースを解放
+        elif key == ord('s'):  # 's' キーで表示モード切り替え
+            show_detection = not show_detection
+        elif key == ord('+') and confidence_threshold < 0.9:  # 信頼度閾値を上げる
+            confidence_threshold += 0.1
+        elif key == ord('-') and confidence_threshold > 0.1:  # 信頼度閾値を下げる
+            confidence_threshold -= 0.1
+    
+    # リソースを解放
     cap.release()
     cv2.destroyAllWindows()
 
 
 def parse_args() -> argparse.Namespace:
-    """コマンドライン引数を解析して、実行モードを指定できるようにする。
-
-    - `--mode simple` : OpenCVのみのシンプルカメラ表示
-    - `--mode yolo`   : YOLOv8nを用いた物体検出カメラ
-
-    モードを引数として渡せるようにすることで、
-    同じスクリプトから用途に応じて動作を切り替えられるようにしている。
-
+    """コマンドライン引数を解析する。
+    
+    以下のオプションをサポート:
+    - `--no-fps`: FPS表示を無効化
+    - `--conf`: 物体検出の信頼度閾値 (デフォルト: 0.5)
+    
     参考:
         - Python argparse チュートリアル
           https://docs.python.org/3/howto/argparse.html
     """
-
     parser = argparse.ArgumentParser(
-        description="オフライン物体検出カメラアプリケーション (simple / yolo)"
+        description="リアルタイム物体検出カメラアプリケーション"
     )
-
+    
     parser.add_argument(
-        "--mode",
-        choices=["simple", "yolo"],
-        default="simple",
-        help="実行モードを指定 (simple: シンプルカメラ, yolo: YOLOv8n物体検出)"
+        "--no-fps",
+        action="store_false",
+        dest="show_fps",
+        help="FPS表示を無効化"
     )
-
+    
+    parser.add_argument(
+        "--conf",
+        type=float,
+        default=0.5,
+        help="物体検出の信頼度閾値 (0.0 ～ 1.0)",
+        metavar="THRESHOLD"
+    )
+    
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     # メインエントリポイント
-    # コマンドライン引数からモードを取得し、対応する機能を呼び出す。
     args = parse_args()
-
-    if args.mode == "simple":
-        simple_camera()
-    elif args.mode == "yolo":
-        yolo_camera()
+    
+    # 信頼度閾値が有効な範囲内かチェック
+    args.conf = max(0.0, min(1.0, args.conf))  # 0.0 ～ 1.0 の範囲に収める
+    
+    try:
+        # 物体検出機能を実行
+        run_object_detection(show_fps=args.show_fps, confidence_threshold=args.conf)
+    except KeyboardInterrupt:
+        print("\nアプリケーションを終了します。")
+    except Exception as e:
+        print(f"エラーが発生しました: {e}")
+    finally:
+        # 確実にリソースを解放
+        cv2.destroyAllWindows()
