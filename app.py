@@ -818,12 +818,13 @@ def run_inference(image: np.ndarray, model_path: str = "yolov8n.pt") -> dict:
                 # CPUで実行しているため、.cpu()は不要だが、互換性のため残している
                 bbox = box.xyxy[0].cpu().numpy().tolist()
                 
-                # 検出結果を辞書形式で追加
-                detections.append({
-                    "class": class_name,
-                    "confidence": confidence,
-                    "bbox": bbox
-                })
+                # personクラスはスキップし、それ以外のクラスのみを検出結果に追加
+                if class_name != 'person':
+                    detections.append({
+                        "class": class_name,
+                        "confidence": confidence,
+                        "bbox": bbox
+                    })
         
         # 結果を辞書形式で返す
         return {
