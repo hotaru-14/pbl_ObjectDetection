@@ -2,7 +2,3 @@ flask
 ultralytics
 opencv-python
 numpy
-openai
-python-dotenv
-opencv-python
-numpy
