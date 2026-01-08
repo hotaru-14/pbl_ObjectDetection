@@ -1,8 +1,8 @@
-# リアルタイム物体検出 & 図鑑生成アプリ / Real-time Object Detection & Encyclopedia Generation App
+# 写真で集める図鑑アプリ / Photo Collection Encyclopedia App
 
-FlaskとYOLOv8nを活用したリアルタイム物体検出と、LLMによる図鑑自動生成アプリケーション。
+FlaskとLLMを活用した図鑑自動生成アプリケーション。
 
-A real-time object detection application using Flask and YOLOv8n, with automatic encyclopedia generation powered by LLM.
+An automatic encyclopedia generation application using Flask and LLM.
 
 ---
 
@@ -22,10 +22,10 @@ A real-time object detection application using Flask and YOLOv8n, with automatic
 ## 概要 / Overview
 
 ### 日本語
-このプロジェクトは、Webカメラや画像を使用してリアルタイムで物体検出を行い、LLM（大規模言語モデル）を活用して自動的に図鑑を生成するアプリケーションです。PBLの授業の一環として開発しています。
+このプロジェクトは、LLM（大規模言語モデル）を活用して自動的に図鑑を生成するアプリケーションです。場所を入力すると、LLMがWeb検索で情報を収集し、その場所で見つけやすい対象の図鑑を自動生成します。PBLの授業の一環として開発しています。
 
 ### English
-This project is an application that performs real-time object detection using a webcam or images, and automatically generates an encyclopedia using LLM (Large Language Model). It is being developed as part of a PBL course.
+This project is an application that automatically generates an encyclopedia using LLM (Large Language Model). When you enter a place, LLM collects information through web search and automatically generates an encyclopedia of objects that are easy to find at that location. It is being developed as part of a PBL course.
 
 ---
 
@@ -157,7 +157,7 @@ This project is an application that performs real-time object detection using a 
        │             │             │             │
        ▼             ▼             ▼             ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                      Flask Backend (app.py)                      │
+│                      Flask Backend (main.py)                     │
 ├──────────────────┬───────────────────┬───────────────────────────┤
 │   YOLO (v8n)     │       LLM         │      Data Management      │
 │  Person Check    │  Web Search &     │   CSV Read/Write          │
@@ -202,7 +202,7 @@ source .venv/bin/activate  # Linux/Macの場合 / For Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 4. 環境変数の設定 / Set environment variables
+### 4. 環境変数の設定(やらなくていい) / Set environment variables(not doing)
 
 `.env`ファイルを作成し、OpenAI APIキーを設定してください。
 Create a `.env` file and set your OpenAI API key.
@@ -220,10 +220,10 @@ Run the following command with the virtual environment activated.
 
 ```bash
 # Python 2.x の場合 / For Python 2.x
-python app.py
+python main.py
 
 # Python 3.x の場合 / For Python 3.x
-python3 app.py
+python3 main.py
 ```
 
 ブラウザで `http://127.0.0.1:5000` にアクセスしてアプリケーションを使用できます。
@@ -235,9 +235,8 @@ Access `http://127.0.0.1:5000` in your browser to use the application.
 
 ```
 pbl_ObjectDetection/
-├── app.py                  # Flaskアプリケーションのメインファイル
+├── main.py                 # Flaskアプリケーションのメインファイル
 │                           # Main Flask application file
-├── main.py                 # エントリーポイント / Entry point
 ├── requirements.txt        # プロジェクトの依存関係 / Project dependencies
 ├── yolov8n.pt             # YOLOv8nモデルファイル / YOLOv8n model file
 ├── .gitignore             # Gitで無視するファイル / Git ignore file
@@ -248,10 +247,30 @@ pbl_ObjectDetection/
 │   └── LocationInformation.csv  # 位置情報データ / Location data
 └── templates/
     ├── base.html          # ベーステンプレート / Base template
+    ├── camera.html        # カメラページ / Camera page
     ├── encyclopedia.html  # 図鑑表示ページ / Encyclopedia display page
     ├── create_encyclopedia.html  # 図鑑作成ページ / Encyclopedia creation page
     └── map.html           # 地図ページ / Map page
 ```
+
+---
+
+## API エンドポイント / API Endpoints
+
+### ページルート / Page Routes
+
+| エンドポイント / Endpoint | メソッド / Method | 説明 / Description |
+|--------------------------|------------------|-------------------|
+| `/` | GET | 図鑑作成ページ / Encyclopedia creation page |
+| `/camera` | GET | カメラページ / Camera page |
+| `/encyclopedia` | GET | 図鑑一覧ページ / Encyclopedia list page |
+| `/map` | GET | 地図ページ / Map page |
+
+### API ルート / API Routes
+
+| エンドポイント / Endpoint | メソッド / Method | 説明 / Description |
+|--------------------------|------------------|-------------------|
+| `/api/encyclopedia` | POST | 図鑑生成API / Encyclopedia generation API |
 
 ---
 
@@ -275,24 +294,3 @@ pbl_ObjectDetection/
 | image | 画像パス / Image path |
 
 ---
-
-## 開発状況 / Development Status
-
-- ✅ Flaskアプリケーションの基本構造 / Basic Flask application structure
-- ✅ YOLOv8nを使用した物体検出機能 / Object detection using YOLOv8n
-- ✅ LLMによる図鑑生成機能 / Encyclopedia generation using LLM
-- 🚧 地図UI機能 / Map UI function (in progress)
-
----
-
-## ライセンス / License
-
-PBL Educational Project
-
----
-
-## 参考資料 / References
-
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [Ultralytics YOLOv8](https://docs.ultralytics.com/)
-- [OpenAI API Documentation](https://platform.openai.com/docs/)
