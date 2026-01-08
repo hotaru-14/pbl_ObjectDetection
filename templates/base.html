@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <style>
+    .footer { margin-top: 24px; padding: 16px 0; border-top: 1px solid #ddd; }
+    .footer-nav { display:flex; gap:8px; margin-bottom:8px; }
+    .footer-btn { display:inline-block; padding:8px 12px; border:1px solid #999; border-radius:8px; text-decoration:none; color:inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <nav class="footer-nav" aria-label="フッターナビ">
+      <a class="footer-btn" href="{{ url_for('index') }}">トップ</a>
+      <a class="footer-btn" href="{{ url_for('camera') }}">カメラ</a>
+      <a class="footer-btn" href="{{ url_for('encyclopedia') }}">図鑑</a>
+      <a class="footer-btn" href="{{ url_for('map') }}">地図</a>
+    </nav>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
