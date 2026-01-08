@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .place-detail{
+      display:grid;
+      grid-template-columns:2fr 8fr;
+      height:100vh;
+    }
+    .image-and-description{
+      display:grid;
+      grid-template-rows:1fr 1fr;
+    }
+  
+    /* 追加：区切り線 */
+    .name-list{ border-right:1px solid #ccc; }
+    .image{ border-bottom:1px solid #ccc; }
+  
+    /* 任意：全体も枠で囲うとさらに分かりやすい */
+    .place-detail{ border:1px solid #ccc; }
+</style>  
+<main>
+    <div>
+        {% for p in places %}
+            <span class="chip">{{ p }}</span>
+        {% endfor %}
+    </div>
+
+    <div class="place-detail">
+        <div class="name-list">name list in one place</div>
+        <div class="image-and-description">
+            <div class="image">image</div>
+            <div class="description">description</div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+
+{% block scripts %}
+{% endblock %}

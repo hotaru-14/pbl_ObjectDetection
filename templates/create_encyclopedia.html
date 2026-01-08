@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}AI 図鑑メーカー{% endblock %}
+
+{% block content %}
+<style>
+  #result{ display:none; }
+</style>
+
+<main>
+  <h1>Where are you going?</h1>
+
+  <form id="form">
+    <input id="place" type="text" placeholder="例）上野動物園" autocomplete="off" />
+    <button id="btn" type="submit">Generate Encyclopedia</button>
+  </form>
+
+  <div id="result">
+    <h2 id="title">Generated Encyclopedia</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px;">No</th>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.getElementById("form");
+  const placeInput = document.getElementById("place");
+  const btn = document.getElementById("btn");
+  const title = document.getElementById("title");
+  const tbody = document.getElementById("tbody");
+  const result = document.getElementById("result");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const place = placeInput.value.trim();
+    if (!place) return;
+
+    btn.disabled = true;
+
+    const res = await fetch("/api/encyclopedia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ place }),
+    });
+
+    const data = await res.json();
+
+    title.textContent = `Encyclopedia: ${data.place}`;
+    tbody.innerHTML = "";
+
+    data.encyclopedia.forEach((item, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${item.name}</td>
+        <td>${item.text}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    result.style.display = ""; // ← 生成後に表示
+    btn.disabled = false;
+  });
+</script>
+{% endblock %}

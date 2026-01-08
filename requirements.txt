@@ -6,3 +6,4 @@ openai
 python-dotenv
 opencv-python
 numpy
+pandas
