@@ -27,6 +27,8 @@
       </thead>
       <tbody id="tbody"></tbody>
     </table>
+
+    <button id="saveBtn", type="button">Save Encyclopedia</button>
   </div>
 </main>
 {% endblock %}
@@ -39,6 +41,9 @@
   const title = document.getElementById("title");
   const tbody = document.getElementById("tbody");
   const result = document.getElementById("result");
+  const saveBtn = document.getElementById("saveBtn");
+
+  let lastData = null; // ← 生成した結果を保持
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -55,7 +60,9 @@
 
     const data = await res.json();
 
-    title.textContent = `Encyclopedia: ${data.place}`;
+    lastData = data;
+
+    title.textContent = `${data.place}`;
     tbody.innerHTML = "";
 
     data.encyclopedia.forEach((item, i) => {
@@ -68,8 +75,29 @@
       tbody.appendChild(tr);
     });
 
-    result.style.display = ""; // ← 生成後に表示
+    result.style.display = "block"; // ← 生成後に表示
     btn.disabled = false;
   });
+
+  saveBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    saveBtn.disabled = true;
+
+    const res = await fetch("/api/save_encyclopedia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ place: lastData.place, encyclopedia: lastData.encyclopedia }),
+    });
+
+    const out = await res.json();
+    if (out.success) {
+      alert(`保存しました。${out.rows}件`);
+    } else {
+      alert("保存に失敗しました。");
+    }
+
+    saveBtn.disabled = false;
+  })
 </script>
 {% endblock %}
