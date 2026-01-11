@@ -3,6 +3,8 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os, json
 import pandas as pd
+from datetime import datetime
+import csv
 
 # TODO: promptを工夫する
 
@@ -10,12 +12,24 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = "gpt-5.2-2025-12-11"
 
+# データベースのパス
+DATABASE_PATH = "data/Encyclopedia.csv"
+
 app = Flask(__name__)
 
 # 場所の一覧取得
 def read_places(path="data/Encyclopedia.csv"):
     df = pd.read_csv(path)
     return df["place"].unique().tolist()
+
+def ensure_trailing_newline(path: str) -> None:
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        return
+    with open(path, "rb+") as f:
+        f.seek(-1, os.SEEK_END)
+        last = f.read(1)
+        if last != b"\n":  # 末尾が \r の場合でも \n を足せば \r\n になる
+            f.write(b"\n")
 
 @app.route("/", methods=["GET"])
 def index():
@@ -35,6 +49,31 @@ def encyclopedia():
 @app.route("/map", methods=["GET"])
 def map():
     return render_template("map.html")
+
+
+@app.route("/api/save_encyclopedia", methods=["POST"])
+def save_encyclopedia():
+    payload = request.get_json(silent=True) or {}
+    place = (payload.get("place") or "").strip()
+    items = payload.get("encyclopedia") or []
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    rows = 0
+    
+    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+
+    ensure_trailing_newline(DATABASE_PATH)  
+
+    with open(DATABASE_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        for item in items:
+            name = (item.get("name") or "").strip()
+            description = (item.get("text") or "").strip()
+            writer.writerow([name, "", description, place, today])
+            rows += 1
+
+    return jsonify({"success": True, "rows": rows})
 
 
 @app.route("/api/encyclopedia", methods=["POST"])
@@ -73,9 +112,15 @@ def create_encyclopedia():
 }}
 """
 
+    # response = client.responses.create(
+    #     model=MODEL,
+    #     reasoning={"effort": "low"},
+    #     tools=[{"type": "web_search"}],
+    #     input=prompt,
+    # )
+
     response = client.responses.create(
-        model=MODEL,
-        reasoning={"effort": "low"},
+        model="gpt-4.1-2025-04-14",
         tools=[{"type": "web_search"}],
         input=prompt,
     )
